@@ -3,15 +3,12 @@
 
 
 
-<h1>Hello, world!</h1>
-
-Welcome to your my app. X00149064 - Mateus Cardoso
-
 
 
 <h1>News Articles</h1>
 
-<p>This component demonstrates fetching data from the server.</p>
+
+
 
 @if (this.found == false)
 {
@@ -19,45 +16,24 @@ Welcome to your my app. X00149064 - Mateus Cardoso
 }
 else
 {
-    
-    <div class="card">
-        <img src="@data.articles.ElementAt(1).urlToImage" alt="articleImage" style="width:100%"/>
-        <div class="container">
-            <h4><b>@data.articles.ElementAt(1).title</b></h4>
-            <p>@data.articles.ElementAt(1).description</p>
+<div class="row">
+    @for (int i = 0; i < data.articles.Count; i++)
+    {
+        <div class="column">
+            <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
+            <div class="container">
+                <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
+                <p>@data.articles.ElementAt(i).description</p>
+            </div>
         </div>
-    </div>
+    }
+        </div>
+        
+    }
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Description</th>
-                <th>Content</th>
-            </tr>
-        </thead>
-        <tbody>
+    @code {
 
-            @for (int i = 0; i < data.articles.Count; i++)
-            {
-                <tr>
-                    <td>@data.articles.ElementAt(i).title</td>
-                    <td>@data.articles.ElementAt(i).author</td>
-                    <td>@data.articles.ElementAt(i).description</td>
-                    <td>@data.articles.ElementAt(i).content</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-
-
-}
-
-@code {
-
-    private String subject = "ireland";
+private String subject = "ireland";
     private bool found;
 
     private Root data;
@@ -67,7 +43,7 @@ else
     {
         try
         {
-            string uri = "https://newsapi.org/v2/everything?q=bitcoin&from=2020-10-29&sortBy=publishedAt&apiKey=882c6f02b8a944d999549162b5fd43d2";
+            string uri = "https://newsapi.org/v2/everything?q=ireland&from=2020-10-29&sortBy=publishedAt&language=en&apiKey=882c6f02b8a944d999549162b5fd43d2";
             data = await Http.GetFromJsonAsync<Root>(uri);
             found = true;
             errorMessage = String.Empty;
@@ -116,6 +92,6 @@ else
 
 
 
-}
+    }
 
 
