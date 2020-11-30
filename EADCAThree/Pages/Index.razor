@@ -7,7 +7,14 @@
 
 <h1>News Articles</h1>
 
+<div>
+    <label for="newsTopic">Topic : </label>
+    <input id="newsTopic" @bind="newsTopic" />
+    <button @onclick="searchTopic">Search</button>
+    <p></p>
+</div>
 
+        
 
 
 @if (this.found == false)
@@ -16,12 +23,14 @@
 }
 else
 {
+
 <div class="row">
     @for (int i = 0; i < data.articles.Count; i++)
     {
         <div class="column">
             <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
             <div class="container">
+                <!-- The code below is putting a hyper link in the news article Title, if the user clicks on it, it will open a new tab-->
                 <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
                 <p>@data.articles.ElementAt(i).description</p>
             </div>
@@ -33,59 +42,66 @@ else
 
     @code {
 
-private String subject = "ireland";
-    private bool found;
+        private String newsTopic = "ireland";
+        private bool found;
 
-    private Root data;
-    private string errorMessage;
+        private Root data;
+        private string errorMessage;
 
-    private async Task getNewsAsync()
-    {
-        try
+        private async Task getNewsAsync()
         {
-            string uri = "https://newsapi.org/v2/everything?q=ireland&from=2020-10-29&sortBy=publishedAt&language=en&apiKey=882c6f02b8a944d999549162b5fd43d2";
-            data = await Http.GetFromJsonAsync<Root>(uri);
-            found = true;
-            errorMessage = String.Empty;
+            try
+            {
+                string uri = "https://newsapi.org/v2/everything?q="+ this.newsTopic +"&language=en&apiKey=882c6f02b8a944d999549162b5fd43d2";
+                data = await Http.GetFromJsonAsync<Root>(uri);
+                found = true;
+                errorMessage = String.Empty;
+            }
+
+            catch (Exception e)
+            {
+                found = false;
+                errorMessage = e.Message;
+            }
         }
 
-        catch (Exception e)
+        //Lifecycle method
+        protected override async Task OnInitializedAsync()
         {
-            found = false;
-            errorMessage = e.Message;
+            await getNewsAsync();
         }
-    }
 
-    //Lifecycle method
-    protected override async Task OnInitializedAsync()
-    {
-        await getNewsAsync();
-    }
+        //Search for the user input topic
+        public async void searchTopic()
+        {
+            await getNewsAsync();
+            StateHasChanged();
+        }
 
-    public class Source
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-    }
+        public class Source
+        {
+            public string id { get; set; }
+            public string name { get; set; }
+        }
 
-    public class Article
-    {
-        public Source source { get; set; }
-        public string author { get; set; }
-        public string title { get; set; }
-        public string description { get; set; }
-        public string url { get; set; }
-        public string urlToImage { get; set; }
-        public DateTime publishedAt { get; set; }
-        public string content { get; set; }
-    }
+        public class Article
+        {
+            public Source source { get; set; }
+            public string author { get; set; }
+            public string title { get; set; }
+            public string description { get; set; }
+            public string url { get; set; }
+            public string urlToImage { get; set; }
+            public DateTime publishedAt { get; set; }
+            public string content { get; set; }
+        }
 
-    public class Root
-    {
-        public string status { get; set; }
-        public int totalResults { get; set; }
-        public List<Article> articles { get; set; }
-    }
+        public class Root
+        {
+            public string status { get; set; }
+            public int totalResults { get; set; }
+            public List<Article> articles { get; set; }
+        }
 
 
 
