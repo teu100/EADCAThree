@@ -7,14 +7,39 @@
 
 <h1>News Articles</h1>
 
+@if(this.typeSearch == null)
+{
+    <p>Please select a way to search news and click the search button</p>
+}
+
 <div>
-    <label for="newsTopic">Topic : </label>
-    <input id="newsTopic" @bind="newsTopic" />
-    <button @onclick="searchTopic">Search</button>
-    <p></p>
+    <label for="typeSearch">Choose a search type: </label>
+    <select id="typeSearch" name="typeSearch" @bind="typeSearch">
+        <option value="nothing"></option>
+        <option value="headLines"> By top headlines in a Country</option>
+        <option value="everyThing">By topic</option>
+    </select>
+    @if (this.typeSearch == "headLines")
+    {
+        <button @onclick="searchTopic">Search</button>
+        <br /><br />
+    }
 </div>
 
-        
+
+@if (this.typeSearch == "everyThing")
+{
+    <div>
+        <label for="newsTopic">Topic : </label>
+        <input id="newsTopic" @bind="newsTopic" />
+        <button @onclick="searchTopic">Search</button>
+        <p></p>
+    </div>
+}
+
+
+
+
 
 
 @if (this.found == false)
@@ -24,90 +49,100 @@
 else
 {
 
-<div class="row">
-    @for (int i = 0; i < data.articles.Count; i++)
-    {
-        <div class="column">
-            <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
-            <div class="container">
-                <!-- The code below is putting a hyper link in the news article Title, if the user clicks on it, it will open a new tab-->
-                <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
-                <p>@data.articles.ElementAt(i).description</p>
+    <div class="row">
+        @for (int i = 0; i < data.articles.Count; i++)
+        {
+            <div class="column">
+                <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
+                <div class="container">
+                    <!-- The code below is putting a hyper link in the news article Title, if the user clicks on it, it will open a new tab-->
+                    <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
+                    <p>@data.articles.ElementAt(i).description</p>
+                </div>
             </div>
-        </div>
-    }
-        </div>
-        
-    }
+        }
+    </div>
 
-    @code {
+}
 
-        private String newsTopic = "ireland";
-        private bool found;
+@code {
+    private String typeSearch;
+    private String newsTopic;
+    private bool found;
 
-        private Root data;
-        private string errorMessage;
+    private Root data;
+    string uri = "Please select a type search";
+    private string errorMessage;
 
-        private async Task getNewsAsync()
+    private async Task getNewsAsync()
+    {
+        try
         {
-            try
+
+
+            if (this.typeSearch == "headLines")
             {
-                string uri = "https://newsapi.org/v2/everything?q="+ this.newsTopic +"&language=en&apiKey=882c6f02b8a944d999549162b5fd43d2";
-                data = await Http.GetFromJsonAsync<Root>(uri);
-                found = true;
-                errorMessage = String.Empty;
+                this.uri = "https://newsapi.org/v2/top-headlines?country=ie&apiKey=882c6f02b8a944d999549162b5fd43d2";
+            }
+            if (this.typeSearch == "everyThing")
+            {
+                this.uri = "https://newsapi.org/v2/everything?q=" + this.newsTopic + "&language=en&apiKey=882c6f02b8a944d999549162b5fd43d2";
             }
 
-            catch (Exception e)
-            {
-                found = false;
-                errorMessage = e.Message;
-            }
+            data = await Http.GetFromJsonAsync<Root>(uri);
+            found = true;
+            errorMessage = String.Empty;
         }
 
-        //Lifecycle method
-        protected override async Task OnInitializedAsync()
+        catch (Exception e)
         {
-            await getNewsAsync();
+            found = false;
         }
-
-        //Search for the user input topic
-        public async void searchTopic()
-        {
-            await getNewsAsync();
-            StateHasChanged();
-        }
-
-        public class Source
-        {
-            public string id { get; set; }
-            public string name { get; set; }
-        }
-
-        public class Article
-        {
-            public Source source { get; set; }
-            public string author { get; set; }
-            public string title { get; set; }
-            public string description { get; set; }
-            public string url { get; set; }
-            public string urlToImage { get; set; }
-            public DateTime publishedAt { get; set; }
-            public string content { get; set; }
-        }
-
-        public class Root
-        {
-            public string status { get; set; }
-            public int totalResults { get; set; }
-            public List<Article> articles { get; set; }
-        }
-
-
-
-
-
-
     }
+
+    //Lifecycle method
+    protected override async Task OnInitializedAsync()
+    {
+        await getNewsAsync();
+    }
+
+    //Search for the user input topic
+    public async void searchTopic()
+    {
+        await getNewsAsync();
+        StateHasChanged();
+    }
+
+    public class Source
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+    }
+
+    public class Article
+    {
+        public Source source { get; set; }
+        public string author { get; set; }
+        public string title { get; set; }
+        public string description { get; set; }
+        public string url { get; set; }
+        public string urlToImage { get; set; }
+        public DateTime publishedAt { get; set; }
+        public string content { get; set; }
+    }
+
+    public class Root
+    {
+        public string status { get; set; }
+        public int totalResults { get; set; }
+        public List<Article> articles { get; set; }
+    }
+
+
+
+
+
+
+}
 
 
