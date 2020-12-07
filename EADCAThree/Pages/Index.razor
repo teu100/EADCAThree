@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject HttpClient Http
+@using Blazored.Typeahead;
 
 
 
@@ -7,7 +8,7 @@
 
 <h1>News Articles</h1>
 
-@if(this.typeSearch == null)
+@if (this.typeSearch == null)
 {
     <p>Please select a way to search news and click the search button</p>
 }
@@ -15,27 +16,59 @@
 <div>
     <label for="typeSearch">Choose a search type: </label>
     <select id="typeSearch" name="typeSearch" @bind="typeSearch">
-        <option value="nothing"></option>
+        <option value="@nullString">Please select a type of search</option>
         <option value="headLines"> By top headlines in a Country</option>
         <option value="everyThing">By topic</option>
     </select>
+
+    <!-- If the user selected top headlines in a country, it will go in here -->
     @if (this.typeSearch == "headLines")
     {
-        <button @onclick="searchTopic">Search</button>
+        <br />
+        <p>Note : Please be aware that the news will be in the selected country language</p>
+        <label for="countrySearch">Choose a country: </label>
+        <select id="countrySearch" name="countrySearch" @bind="countryISO">
+            <option value="@nullString">Please select a country</option><!-- I have this because if I dont the first value of the array 
+                                                                            will show in the dropdown and if the user clicks search it will do a random search
+                                                                            and not for the value displayed in the dropdown-->
+            <!-- loops through the values of the 2D array, and after a user selects it, it populates the countryISO var -->
+            @for (int i = 0; i < this.countryCodeTesting.GetLength(0); i++)
+            {
+                <option value="@countryCodeTesting[i,1]">@countryCodeTesting[i, 0]</option>
+
+            }
+        </select>
+        <br />
+
+        <label for="category">Choose a category: </label>
+        <select id="category" name="category" @bind="category">
+            <option value="@nullString">Please select a category</option>
+            <!-- Loops through the category arrays and after a user selects it  -->
+            @for (int y = 0; y < this.countryCategorys.Length; y++)
+            {
+                <option value="@this.countryCategorys.ElementAt(y)">@this.countryCategorys.ElementAt(y)</option>
+            }
+        </select>
+        <button @onclick="searchNews">Search</button>
         <br /><br />
+
     }
 </div>
 
 
+
+<!-- if the user selectes everything on a topic, it will go into here -->
 @if (this.typeSearch == "everyThing")
 {
     <div>
         <label for="newsTopic">Topic : </label>
         <input id="newsTopic" @bind="newsTopic" />
-        <button @onclick="searchTopic">Search</button>
+        <button @onclick="searchNews">Search</button>
         <p></p>
     </div>
 }
+
+
 
 
 
@@ -53,26 +86,58 @@ else
         @for (int i = 0; i < data.articles.Count; i++)
         {
             <div class="column">
-                <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
-                <div class="container">
-                    <!-- The code below is putting a hyper link in the news article Title, if the user clicks on it, it will open a new tab-->
-                    <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
-                    <p>@data.articles.ElementAt(i).description</p>
+                <div class="card">
+                    <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
+                    <div class="container">
+                        <!-- The code below is putting a hyper link in the news article Title, if the user clicks on it, it will open a new tab-->
+                        <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
+                        <p>@data.articles.ElementAt(i).description</p>
+                    </div>
+
                 </div>
             </div>
         }
     </div>
 
+
+
 }
 
 @code {
+    //after the user selects the type of search he want, this var get a value
     private String typeSearch;
+
+    //country ISO will get its value from the 2D array and a user selected a value in the dropdown 
+    private String countryISO;
+
+    //I made this value so I can put in the dropdown
+    private string nullString = null;
+
+    private String category;
+
     private String newsTopic;
     private bool found;
 
     private Root data;
+    //I have put a value here so it makes the user select the type of search he wants
     string uri = "Please select a type search";
     private string errorMessage;
+
+    //This var stores all the possible categories that each country can search by
+    string[] countryCategorys = { "business", "entertainment", "general", "health", "science", "sports", "technology" };
+
+    //2D with the coutry name and its corresponding ISO code 
+    string[,] countryCodeTesting = new string[,] {
+        { "Ireland", "ie" },
+        {"United Kingdom","gb"},
+        {"Brazil","br" },
+        {"France","fr" },
+        {"Germany","de" },
+        {"Latvia","lv" },
+        {"Lithuania","lt" },
+        {"Netherlands","nl" },
+        {"Poland","pl" }
+    };
 
     private async Task getNewsAsync()
     {
@@ -82,7 +147,7 @@ else
 
             if (this.typeSearch == "headLines")
             {
-                this.uri = "https://newsapi.org/v2/top-headlines?country=ie&apiKey=882c6f02b8a944d999549162b5fd43d2";
+                this.uri = "https://newsapi.org/v2/top-headlines?country=" + this.countryISO + "&category=" + this.category + "&apiKey=882c6f02b8a944d999549162b5fd43d2";
             }
             if (this.typeSearch == "everyThing")
             {
@@ -107,11 +172,13 @@ else
     }
 
     //Search for the user input topic
-    public async void searchTopic()
+    public async void searchNews()
     {
         await getNewsAsync();
         StateHasChanged();
     }
+
+
 
     public class Source
     {
@@ -137,6 +204,9 @@ else
         public int totalResults { get; set; }
         public List<Article> articles { get; set; }
     }
+
+
+
 
 
 
