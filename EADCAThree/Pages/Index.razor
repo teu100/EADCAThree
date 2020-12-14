@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject HttpClient Http
 @using Blazored.Typeahead;
+@using System.Linq;
 
 
 
@@ -28,9 +29,10 @@
         <p>Note : Please be aware that the news will be in the selected country language</p>
         <label for="countrySearch">Choose a country: </label>
         <select id="countrySearch" name="countrySearch" @bind="countryISO">
-            <option value="@nullString">Please select a country</option><!-- I have this because if I dont the first value of the array 
-                                                                            will show in the dropdown and if the user clicks search it will do a random search
-                                                                            and not for the value displayed in the dropdown-->
+            <option value="@nullString">Please select a country</option>
+            <!-- I have this because if I dont the first value of the array
+                will show in the dropdown and if the user clicks search it will do a random search
+                and not for the value displayed in the dropdown-->
             <!-- loops through the values of the 2D array, and after a user selects it, it populates the countryISO var -->
             @for (int i = 0; i < this.countryCodeTesting.GetLength(0); i++)
             {
@@ -60,12 +62,24 @@
 <!-- if the user selectes everything on a topic, it will go into here -->
 @if (this.typeSearch == "everyThing")
 {
-    <div>
-        <label for="newsTopic">Topic : </label>
-        <input id="newsTopic" @bind="newsTopic" />
-        <button @onclick="searchNews">Search</button>
-        <p></p>
-    </div>
+<div>
+    <label for="newsTopic">Topic : </label>
+    <input id="newsTopic" @bind="newsTopic" />
+    <button @onclick="searchNews">Search</button>
+
+    @if (this.nullStringTopic == true)
+    {
+        <p>The search string is null</p>
+    }
+    
+
+        @if (this.especialChar == true)
+        {
+            <p>**Please do not input any especial characters in the topic search**</p>
+        }
+
+    <p></p>
+</div>
 }
 
 
@@ -106,19 +120,45 @@ else
 @code {
     //after the user selects the type of search he want, this var get a value
     private String typeSearch;
+    //I made this method so i can set a value in the unit testing 
+    public void setTypeSearch(string inString)
+    {
+        this.typeSearch = inString;
+    }
 
-    //country ISO will get its value from the 2D array and a user selected a value in the dropdown 
+
+
+    //country ISO will get its value from the 2D array and a user selected a value in the dropdown
     private String countryISO;
+
+    public void setISO(string iso)
+    {
+        this.countryISO = iso;
+    }
+
+
 
     //I made this value so I can put in the dropdown
     private string nullString = null;
 
     private String category;
 
+    public void setCategory(string cat)
+    {
+        this.category = cat;
+    }
+
     private String newsTopic;
     private bool found;
+    private bool especialChar;
+    private bool nullStringTopic = false;
 
     private Root data;
+
+    public Root getData()
+    {
+        return this.data;
+    }
     //I have put a value here so it makes the user select the type of search he wants
     string uri = "Please select a type search";
     private string errorMessage;
@@ -126,20 +166,20 @@ else
     //This var stores all the possible categories that each country can search by
     string[] countryCategorys = { "business", "entertainment", "general", "health", "science", "sports", "technology" };
 
-    //2D with the coutry name and its corresponding ISO code 
+    //2D with the coutry name and its corresponding ISO code
     string[,] countryCodeTesting = new string[,] {
-        { "Ireland", "ie" },
-        {"United Kingdom","gb"},
-        {"Brazil","br" },
-        {"France","fr" },
-        {"Germany","de" },
-        {"Latvia","lv" },
-        {"Lithuania","lt" },
-        {"Netherlands","nl" },
-        {"Poland","pl" }
+    { "Ireland", "ie" },
+    {"United Kingdom","gb"},
+    {"Brazil","br" },
+    {"France","fr" },
+    {"Germany","de" },
+    {"Latvia","lv" },
+    {"Lithuania","lt" },
+    {"Netherlands","nl" },
+    {"Poland","pl" }
     };
 
-    private async Task getNewsAsync()
+    public async Task getNewsAsync()
     {
         try
         {
@@ -174,8 +214,36 @@ else
     //Search for the user input topic
     public async void searchNews()
     {
-        await getNewsAsync();
-        StateHasChanged();
+
+        if(this.newsTopic == null & this.typeSearch == "everyThing")
+        {
+            this.nullStringTopic = true;
+        }
+
+        //this.nullStringTopic = false;
+        //this if statement is checking if the string contains any special chars that might affect the api URL
+        //The main special chars are & and =, the rest I'm just checking for secure measure
+        else if(this.newsTopic.ToLower().Contains('&') || this.newsTopic.ToLower().Contains('=') || this.newsTopic.ToLower().Contains('@') || this.newsTopic.ToLower().Contains('!') ||
+        this.newsTopic.ToLower().Contains('%') || this.newsTopic.ToLower().Contains('*'))
+        {
+            this.especialChar = true;
+        }
+
+        else if(this.typeSearch == "headLines")
+        {
+            await getNewsAsync();
+            StateHasChanged();
+        }
+
+        else
+        {
+            this.especialChar = false;
+            this.nullStringTopic = false;
+            await getNewsAsync();
+            StateHasChanged();
+
+        }
+
     }
 
 
