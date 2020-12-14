@@ -19,37 +19,36 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
-        /* Float four columns side by side */
+        
         .column {
             float: left;
             width: 25%;
             padding: 0 10px;
         }
-        /* Remove extra left and right margins, due to padding in columns */
+        
         .row {
             margin: 0 -5px;
         }
 
-            /* Clear floats after the columns */
-            .row:after {
-                content: "";
-                display: table;
-                clear: both;
-            }
+            
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
 
-        /* Style the counter cards */
+        
         .card {
-             
             padding: 16px;
             text-align: center;
             background-color: #f1f1f1;
             height: 500px;
-            
+
         }
 
-            .card:hover {
-                box-shadow: 0 0 11px rgba(33,33,33,.2);
-            }
+        .card:hover {
+            box-shadow: 0 0 11px rgba(33,33,33,.2);
+        }
 
     </style>
 </head>

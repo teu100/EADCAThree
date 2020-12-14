@@ -2,7 +2,7 @@
 @inject HttpClient Http
 @using Blazored.Typeahead;
 @using System.Linq;
-
+@using System.Text.RegularExpressions;
 
 
 
@@ -17,7 +17,7 @@
 <div>
     <label for="typeSearch">Choose a search type: </label>
     <select id="typeSearch" name="typeSearch" @bind="typeSearch">
-        <option value="@nullString">Please select a type of search</option>
+        <option value="">Please select a type of search</option>
         <option value="headLines"> By top headlines in a Country</option>
         <option value="everyThing">By topic</option>
     </select>
@@ -29,14 +29,14 @@
         <p>Note : Please be aware that the news will be in the selected country language</p>
         <label for="countrySearch">Choose a country: </label>
         <select id="countrySearch" name="countrySearch" @bind="countryISO">
-            <option value="@nullString">Please select a country</option>
+            <option value="">Please select a country</option>
             <!-- I have this because if I dont the first value of the array
                 will show in the dropdown and if the user clicks search it will do a random search
                 and not for the value displayed in the dropdown-->
             <!-- loops through the values of the 2D array, and after a user selects it, it populates the countryISO var -->
-            @for (int i = 0; i < this.countryCodeTesting.GetLength(0); i++)
+            @for (int i = 0; i < this.countryCode.GetLength(0); i++)
             {
-                <option value="@countryCodeTesting[i,1]">@countryCodeTesting[i, 0]</option>
+                <option value="@countryCode[i,1]">@countryCode[i, 0]</option>
 
             }
         </select>
@@ -44,7 +44,7 @@
 
         <label for="category">Choose a category: </label>
         <select id="category" name="category" @bind="category">
-            <option value="@nullString">Please select a category</option>
+            <option value="">Please select a category</option>
             <!-- Loops through the category arrays and after a user selects it  -->
             @for (int y = 0; y < this.countryCategorys.Length; y++)
             {
@@ -62,24 +62,24 @@
 <!-- if the user selectes everything on a topic, it will go into here -->
 @if (this.typeSearch == "everyThing")
 {
-<div>
-    <label for="newsTopic">Topic : </label>
-    <input id="newsTopic" @bind="newsTopic" />
-    <button @onclick="searchNews">Search</button>
+    <div>
+        <label for="newsTopic">Topic : </label>
+        <input id="newsTopic" @bind="newsTopic" />
+        <button id="newsTopic" @onclick="searchNews">Search</button>
 
-    @if (this.nullStringTopic == true)
-    {
-        <p>The search string is null</p>
-    }
-    
-
-        @if (this.especialChar == true)
+        @if (this.nullStringTopic == true || this.newsTopic == "" || this.specialChar == true)
         {
-            <p>**Please do not input any especial characters in the topic search**</p>
+            <p>The search string is empty or it contains a special character.</p>
         }
 
-    <p></p>
-</div>
+        @if (this.nullStringTopic != true || this.newsTopic != "" || this.specialChar != true)
+        {
+            <p>Happy Searching</p>
+        }
+
+
+        <p></p>
+    </div>
 }
 
 
@@ -101,7 +101,7 @@ else
         {
             <div class="column">
                 <div class="card">
-                    <img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" />
+                    <a href="@data.articles.ElementAt(i).url" target="_blank"><img src="@data.articles.ElementAt(i).urlToImage" alt="articleImage" style="width:100%" /></a>
                     <div class="container">
                         <!-- The code below is putting a hyper link in the news article Title, if the user clicks on it, it will open a new tab-->
                         <h4><b><a href="@data.articles.ElementAt(i).url" target="_blank">@data.articles.ElementAt(i).title</a></b></h4>
@@ -120,75 +120,87 @@ else
 @code {
     //after the user selects the type of search he want, this var get a value
     private String typeSearch;
-    //I made this method so i can set a value in the unit testing 
+
+    //I made this method so i can set a value in the unit testing
     public void setTypeSearch(string inString)
     {
         this.typeSearch = inString;
     }
 
-
+    bool topHeadLinesBool;//I made this so i could do some unit testing
+    public bool TopHeadLinesBool()
+    {
+        return this.topHeadLinesBool;
+    }
 
     //country ISO will get its value from the 2D array and a user selected a value in the dropdown
     private String countryISO;
-
-    public void setISO(string iso)
+    public void setISO(string iso)//unit testing purposes
     {
         this.countryISO = iso;
     }
 
 
 
-    //I made this value so I can put in the dropdown
-    private string nullString = null;
 
-    private String category;
 
+
+    private String newsTopic;//The topic the user inputs
+    public void setNewsTopic(string topic)//for unit testing purposes
+    {
+        this.newsTopic = topic;
+    }
+    private bool found;//= true when articles are found
+    private bool specialChar;//if the newsTopic string contains a special char
+    public bool SpecialChar()
+    {
+        return this.specialChar;
+    }
+    private bool nullStringTopic = false;//if the newsTopic string is null
+    public bool NullStringTopic()//Unit testing method
+    {
+        return this.nullStringTopic;
+    }
+
+    private Root data;
+
+
+    //I have put a value here so it makes the user select the type of search he wants
+    private string uri = "Please select a type search";//I made it private for security reason as api key is exposed after doing a search
+    private string errorMessage;
+
+    private String category;//get a value from the countryCategorys var
     public void setCategory(string cat)
     {
         this.category = cat;
     }
 
-    private String newsTopic;
-    private bool found;
-    private bool especialChar;
-    private bool nullStringTopic = false;
-
-    private Root data;
-
-    public Root getData()
-    {
-        return this.data;
-    }
-    //I have put a value here so it makes the user select the type of search he wants
-    string uri = "Please select a type search";
-    private string errorMessage;
-
     //This var stores all the possible categories that each country can search by
     string[] countryCategorys = { "business", "entertainment", "general", "health", "science", "sports", "technology" };
 
     //2D with the coutry name and its corresponding ISO code
-    string[,] countryCodeTesting = new string[,] {
-    { "Ireland", "ie" },
-    {"United Kingdom","gb"},
-    {"Brazil","br" },
-    {"France","fr" },
-    {"Germany","de" },
-    {"Latvia","lv" },
-    {"Lithuania","lt" },
-    {"Netherlands","nl" },
-    {"Poland","pl" }
+    string[,] countryCode = new string[,] {
+{ "Ireland", "ie" },
+{"United Kingdom","gb"},
+{"Brazil","br" },
+{"France","fr" },
+{"Germany","de" },
+{"Latvia","lv" },
+{"Lithuania","lt" },
+{"Netherlands","nl" },
+{"Poland","pl" }
     };
 
     public async Task getNewsAsync()
     {
         try
         {
-
-
             if (this.typeSearch == "headLines")
             {
                 this.uri = "https://newsapi.org/v2/top-headlines?country=" + this.countryISO + "&category=" + this.category + "&apiKey=882c6f02b8a944d999549162b5fd43d2";
+                this.topHeadLinesBool = true;//unit testing purposes
             }
+
             if (this.typeSearch == "everyThing")
             {
                 this.uri = "https://newsapi.org/v2/everything?q=" + this.newsTopic + "&language=en&apiKey=882c6f02b8a944d999549162b5fd43d2";
@@ -211,37 +223,40 @@ else
         await getNewsAsync();
     }
 
-    //Search for the user input topic
+    //Searches for both method
     public async void searchNews()
     {
 
-        if(this.newsTopic == null & this.typeSearch == "everyThing")
+        Regex rx = new Regex(@"^[a-zA-Z0-9\s]+$");
+        if (this.typeSearch == "everyThing")
         {
-            this.nullStringTopic = true;
+            if (this.newsTopic != null)
+            {
+                this.nullStringTopic = false;
+                //() { } [ ] ' ~ , . < > ^ / ? | \ = - These are the special chars left but I felt like if i added those it would be too much for the if statement
+                if (rx.IsMatch(this.newsTopic) == false)
+                {
+                    this.specialChar = true;
+
+                }
+                else
+                {
+                    this.specialChar = false;
+                    await getNewsAsync();
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                this.nullStringTopic = true;
+            }
         }
 
-        //this.nullStringTopic = false;
-        //this if statement is checking if the string contains any special chars that might affect the api URL
-        //The main special chars are & and =, the rest I'm just checking for secure measure
-        else if(this.newsTopic.ToLower().Contains('&') || this.newsTopic.ToLower().Contains('=') || this.newsTopic.ToLower().Contains('@') || this.newsTopic.ToLower().Contains('!') ||
-        this.newsTopic.ToLower().Contains('%') || this.newsTopic.ToLower().Contains('*'))
-        {
-            this.especialChar = true;
-        }
-
-        else if(this.typeSearch == "headLines")
-        {
-            await getNewsAsync();
-            StateHasChanged();
-        }
 
         else
         {
-            this.especialChar = false;
-            this.nullStringTopic = false;
             await getNewsAsync();
             StateHasChanged();
-
         }
 
     }
