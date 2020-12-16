@@ -29,7 +29,7 @@
         <p>Note : Please be aware that the news will be in the selected country language</p>
         <label for="countrySearch">Choose a country: </label>
         <select id="countrySearch" name="countrySearch" @bind="countryISO">
-            <option value="">Please select a country</option>
+            <option value="noCountrySelected">Please select a country</option>
             <!-- I have this because if I dont the first value of the array
                 will show in the dropdown and if the user clicks search it will do a random search
                 and not for the value displayed in the dropdown-->
@@ -44,7 +44,7 @@
 
         <label for="category">Choose a category: </label>
         <select id="category" name="category" @bind="category">
-            <option value="">Please select a category</option>
+            <option value="noCatSelected">Please select a category</option>
             <!-- Loops through the category arrays and after a user selects it  -->
             @for (int y = 0; y < this.countryCategorys.Length; y++)
             {
@@ -52,7 +52,15 @@
             }
         </select>
         <button @onclick="searchNews">Search</button>
-        <br /><br />
+        <br/><br/>
+        @if(this.countrySelected == false)
+        {
+            <p>No country has been selected</p>
+        }
+        @if(this.categorySelected == false)
+        {
+            <p>No category has been selected</p>
+        }
 
     }
 </div>
@@ -118,78 +126,83 @@ else
 }
 
 @code {
+
+    // VARS
     //after the user selects the type of search he want, this var get a value
     private String typeSearch;
+    bool topHeadLinesBool;
+    private String countryISO = null;//country ISO will get its value from the 2D array and a user selected a value in the dropdown
+    private String newsTopic;//The topic the user inputs
+    private bool nullStringTopic = false;//if the newsTopic string is null
+    private bool found;//= true when articles are found
+    private bool specialChar;//if the newsTopic string contains a special char
+    private Root data;
+    //I have put a value here so it makes the user select the type of search he wants
+    private string uri = "Please select a type search";//I made it private for security reason as api key is exposed
+    private string errorMessage;
+    private String category = null;//get a value from the countryCategorys var
+    bool categorySelected;
+    //This var stores all the possible categories that each country can search by
+    string[] countryCategorys = { "business", "entertainment", "general", "health", "science", "sports", "technology" };
+    bool countrySelected;
+    //2D with the coutry name and its corresponding ISO code
+    string[,] countryCode = new string[,] {
+                    { "Ireland", "ie" },
+                    {"United Kingdom","gb"},
+                    {"Brazil","br" },
+                    {"France","fr" },
+                    {"Germany","de" },
+                    {"Latvia","lv" },
+                    {"Lithuania","lt" },
+                    {"Netherlands","nl" },
+                    {"Poland","pl" }
+                            };
 
+    //GET OR SET METHODS FOR UNIT TESTING PURPOSES
     //I made this method so i can set a value in the unit testing
     public void setTypeSearch(string inString)
     {
         this.typeSearch = inString;
     }
 
-    bool topHeadLinesBool;//I made this so i could do some unit testing
+    //I made this so i could do some unit testing
     public bool TopHeadLinesBool()
     {
         return this.topHeadLinesBool;
     }
 
-    //country ISO will get its value from the 2D array and a user selected a value in the dropdown
-    private String countryISO;
+
     public void setISO(string iso)//unit testing purposes
     {
         this.countryISO = iso;
     }
-
-
-
-
-
-
-    private String newsTopic;//The topic the user inputs
     public void setNewsTopic(string topic)//for unit testing purposes
     {
         this.newsTopic = topic;
     }
-    private bool found;//= true when articles are found
-    private bool specialChar;//if the newsTopic string contains a special char
+
     public bool SpecialChar()
     {
         return this.specialChar;
     }
-    private bool nullStringTopic = false;//if the newsTopic string is null
+
     public bool NullStringTopic()//Unit testing method
     {
         return this.nullStringTopic;
     }
 
-    private Root data;
 
 
-    //I have put a value here so it makes the user select the type of search he wants
-    private string uri = "Please select a type search";//I made it private for security reason as api key is exposed after doing a search
-    private string errorMessage;
 
-    private String category;//get a value from the countryCategorys var
+
+
+
     public void setCategory(string cat)
     {
         this.category = cat;
     }
 
-    //This var stores all the possible categories that each country can search by
-    string[] countryCategorys = { "business", "entertainment", "general", "health", "science", "sports", "technology" };
 
-    //2D with the coutry name and its corresponding ISO code
-    string[,] countryCode = new string[,] {
-{ "Ireland", "ie" },
-{"United Kingdom","gb"},
-{"Brazil","br" },
-{"France","fr" },
-{"Germany","de" },
-{"Latvia","lv" },
-{"Lithuania","lt" },
-{"Netherlands","nl" },
-{"Poland","pl" }
-    };
 
     public async Task getNewsAsync()
     {
@@ -227,13 +240,13 @@ else
     public async void searchNews()
     {
 
-        Regex rx = new Regex(@"^[a-zA-Z0-9\s]+$");
+
         if (this.typeSearch == "everyThing")
         {
             if (this.newsTopic != null)
             {
+                Regex rx = new Regex(@"^[a-zA-Z0-9\s]+$");
                 this.nullStringTopic = false;
-                //() { } [ ] ' ~ , . < > ^ / ? | \ = - These are the special chars left but I felt like if i added those it would be too much for the if statement
                 if (rx.IsMatch(this.newsTopic) == false)
                 {
                     this.specialChar = true;
@@ -251,12 +264,31 @@ else
                 this.nullStringTopic = true;
             }
         }
+        else if (this.typeSearch == "headLines")
+        {
+            if (this.countryISO != "noCountrySelected" || this.countryISO == null)
+            {
+                this.countrySelected = true;
+                if (this.category != "noCatSelected" || this.category == null)
+                {
+                    this.categorySelected = true;
+                    await getNewsAsync();
+                    StateHasChanged();
+                }
+                else
+                {
+                    this.categorySelected = false;
+                }
 
-
+            }
+            else
+            {
+                this.countrySelected = false;
+            }
+        }
         else
         {
-            await getNewsAsync();
-            StateHasChanged();
+            //Nothing happens
         }
 
     }

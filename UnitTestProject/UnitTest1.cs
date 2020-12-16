@@ -66,7 +66,6 @@ namespace UnitTestProject
 
 
             Assert.AreEqual(indexPage1.TopHeadLinesBool(), true);
-            Assert.AreEqual(indexPage2.SpecialChar(), false);
         }
     }
 }
